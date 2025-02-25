@@ -8,9 +8,24 @@ const preview = document.getElementById('preview');
 let currentImageData = ''; // 選択中の画像データを保持
 
 // カメラ起動
-navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
-.then(stream => video.srcObject = stream)
-.catch(err => console.error("カメラ起動失敗:", err));
+navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode: { exact: "user" } // `exact` を付けることでインカメラを強制
+    }
+  })
+  .then(stream => video.srcObject = stream)
+  .catch(err => {
+    console.error("カメラ起動失敗:", err);
+    
+    // `exact: "user"` がエラーになった場合、通常の `facingMode: "user"` にフォールバック
+    navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: "user"
+      }
+    })
+    .then(stream => video.srcObject = stream)
+    .catch(err => console.error("カメラ起動完全に失敗:", err));
+  });
 
 // 撮影処理
 captureBtn.addEventListener('click', () => {
@@ -46,11 +61,11 @@ analyzeBtn.addEventListener('click', () => {
     return;
   }
 
-  fetch('http://localhost:3000/api/upload', {
+  fetch('https://facescan-api.onrender.com/api/upload', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({image: currentImageData})
-  })
+})
   .then(response => response.json())
   .then(result => {
     console.log('サーバーからのレスポンス:', result);
