@@ -131,4 +131,19 @@ const twitterBtn = document.createElement('button');
 twitterBtn.textContent = 'Twitterでシェア';
 document.body.appendChild(twitterBtn);
 
-const lineBtn = document.createElement('butto
+const lineBtn = document.createElement('button');
+lineBtn.textContent = 'LINEでシェア';
+document.body.appendChild(lineBtn);
+
+twitterBtn.addEventListener('click', () => {
+    const text = encodeURIComponent("【診断結果】\nあなたの顔の診断結果が出ました！\n\n #FaceScan #診断アプリ");
+    const url = encodeURIComponent(window.location.href);
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+    window.open(twitterUrl, '_blank');
+});
+
+lineBtn.addEventListener('click', () => {
+    const text = encodeURIComponent("【診断結果】\nあなたの顔の診断結果が出ました！\n\n #FaceScan #診断アプリ");
+    const lineUrl = `https://line.me/R/msg/text/?${text}`;
+    window.open(lineUrl, '_blank');
+});
