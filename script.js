@@ -19,13 +19,31 @@ fileInput.accept = "image/*";
 fileInput.style.display = "none";
 document.body.appendChild(fileInput);
 
-// ★ 「再撮影する」ボタン（撮影モード用、初期非表示） ← 追加部分
+// ★ 「再撮影する」ボタン（撮影モード用、初期非表示）
 const reCaptureBtn = document.createElement('button');
 reCaptureBtn.textContent = "再撮影する";
 reCaptureBtn.style.display = "none";
 document.body.appendChild(reCaptureBtn);
 
-// ★ シェアボタン関連（そのまま）
+// ★ 「画像を選びなおす」ボタン（画像参照モード用、初期非表示）
+const selectAgainBtn = document.createElement('button');
+selectAgainBtn.textContent = "画像を選びなおす";
+selectAgainBtn.style.display = "none";
+document.body.appendChild(selectAgainBtn);
+
+// ★ 「写真を撮影する」ボタン（画像参照モード用、切り替え用、初期非表示）
+const takePhotoBtn = document.createElement('button');
+takePhotoBtn.textContent = "写真を撮影する";
+takePhotoBtn.style.display = "none";
+document.body.appendChild(takePhotoBtn);
+
+// ★ 「もう一回診断する」ボタン（診断結果後用、初期非表示）
+const retryBtn = document.createElement('button');
+retryBtn.textContent = "もう一回診断する";
+retryBtn.style.display = "none";
+document.body.appendChild(retryBtn);
+
+// ★ シェアボタン関連（初期状態は非表示）
 const shareBtn = document.createElement('button');
 shareBtn.textContent = '診断結果を画像で保存';
 shareBtn.style.display = "none";
@@ -41,20 +59,14 @@ lineBtn.textContent = 'LINEでシェア';
 lineBtn.style.display = "none";
 document.body.appendChild(lineBtn);
 
-// ★ 「もう一回診断する」ボタン（診断結果後用、初期非表示）
-const retryBtn = document.createElement('button');
-retryBtn.textContent = 'もう一回診断する';
-retryBtn.style.display = "none";
-document.body.appendChild(retryBtn);
-
 /* 
   --- 動作フロー ---
   1. 初期状態: 「診断を開始」ボタンのみ表示
-  2. 「診断を開始」を押すと、カメラが起動し、video, 撮影ボタン, 画像参照(fileInput)が表示される
-  3. 撮影ボタンが押されると、画像がキャプチャされ、mode = "capture" となり、プレビュー画像と「この写真で診断」ボタン、さらに「再撮影する」ボタンが表示される
-  4. 画像参照の場合は（mode = "file"）も同様に「この写真で診断」ボタンが表示される
-  5. 「この写真で診断」を押すと、診断結果が取得され、結果を画像化してプレビューに表示、シェアボタン群と「もう一回診断する」ボタンが表示される
-  6. 「再撮影する」ボタンで撮影した画像を完全にクリアし、撮影モードに戻る
+  2. 「診断を開始」を押すと、カメラ起動し、video, 撮影ボタン, 画像参照(fileInput)が表示される
+  3. 撮影ボタンを押すと、画像がキャプチャされ、mode = "capture" となり、プレビュー表示＋「この写真で診断」ボタンと「再撮影する」ボタンが表示される
+  4. ファイル選択の場合、mode = "file" となり、プレビュー表示＋「この写真で診断」ボタン、さらに「画像を選びなおす」と「写真を撮影する」ボタンが表示される
+  5. 「この写真で診断」を押すと、診断結果が取得され、結果を画像化してプレビューに表示。さらに、シェアボタン群と「もう一回診断する」ボタンが表示される
+  6. 「再撮影する」/「画像を選びなおす」/「写真を撮影する」ボタンで、それぞれ撮影モードまたは画像参照モードに戻る
   7. 「もう一回診断する」ボタンで初期状態にリセット
 */
 
@@ -66,6 +78,8 @@ function resetToInitial() {
   fileInput.style.display = "none";
   analyzeBtn.style.display = "none";
   reCaptureBtn.style.display = "none";
+  selectAgainBtn.style.display = "none";
+  takePhotoBtn.style.display = "none";
   retryBtn.style.display = "none";
   shareBtn.style.display = "none";
   twitterBtn.style.display = "none";
@@ -79,7 +93,7 @@ function resetToInitial() {
 // 初期状態にリセット
 resetToInitial();
 
-// 【診断を開始】ボタン: カメラ起動と UI の切り替え
+// 【診断を開始】ボタン: カメラ起動とUI切り替え
 startScanBtn.addEventListener('click', async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
@@ -95,7 +109,7 @@ startScanBtn.addEventListener('click', async () => {
   }
 });
 
-// 【撮影処理】 撮影ボタンが押されたら、video から canvas に画像をキャプチャ
+// 【撮影処理】 撮影ボタン押下でvideoからcanvasに画像をキャプチャ
 captureBtn.addEventListener('click', () => {
   const ctx = canvas.getContext('2d');
   canvas.width = video.videoWidth;
@@ -107,12 +121,12 @@ captureBtn.addEventListener('click', () => {
   preview.style.display = "block";
   
   mode = "capture"; // 撮影モード
-  // 撮影完了後、UIの切り替え
+  // 撮影完了後、UIの切り替え：video, 撮影ボタン, ファイル入力を非表示し、「この写真で診断」ボタンと「再撮影する」ボタンを表示
   video.style.display = "none";
   captureBtn.style.display = "none";
   fileInput.style.display = "none";
-  analyzeBtn.style.display = "block";  // 「この写真で診断」ボタンを表示
-  reCaptureBtn.style.display = "inline-block"; // 「再撮影する」ボタンを表示
+  analyzeBtn.style.display = "block";  
+  reCaptureBtn.style.display = "inline-block";
 });
 
 // 【ファイル選択処理】 ユーザーがファイルを選択した場合、画像をプレビューに表示
@@ -121,16 +135,19 @@ fileInput.addEventListener('change', (event) => {
   if (file) {
     const reader = new FileReader();
     reader.onload = function(e) {
-      currentImageData = e.target.result; // 選択した画像データを保存
+      currentImageData = e.target.result;
       preview.src = currentImageData;
       preview.style.display = "block";
       
       mode = "file"; // 画像参照モード
-      // UIの切り替え（ファイル選択後は「この写真で診断」ボタンを表示）
+      // UIの切り替え：video, 撮影ボタン, ファイル入力を非表示し、「この写真で診断」ボタン、
+      // 「画像を選びなおす」ボタンと「写真を撮影する」ボタンを表示
       video.style.display = "none";
       captureBtn.style.display = "none";
       fileInput.style.display = "none";
       analyzeBtn.style.display = "block";
+      selectAgainBtn.style.display = "inline-block";
+      takePhotoBtn.style.display = "inline-block";
     };
     reader.readAsDataURL(file);
   }
@@ -160,6 +177,9 @@ analyzeBtn.addEventListener('click', () => {
     retryBtn.style.display = "block";
     // 「再撮影する」ボタンは非表示
     reCaptureBtn.style.display = "none";
+    // ファイル選択モードの場合、ここで「画像を選びなおす」と「写真を撮影する」ボタンは非表示
+    selectAgainBtn.style.display = "none";
+    takePhotoBtn.style.display = "none";
   })
   .catch(error => {
     console.error('エラー発生:', error);
@@ -194,6 +214,32 @@ function displayResultImage(resultText) {
   preview.style.display = "block";
 }
 
+// 【画像を選びなおす】ボタン：ファイル参照モード用に再度ファイル入力を表示
+selectAgainBtn.addEventListener('click', () => {
+  fileInput.style.display = "inline-block";
+  selectAgainBtn.style.display = "none";
+  takePhotoBtn.style.display = "none";
+  analyzeBtn.style.display = "none";
+  preview.src = "";
+  preview.style.display = "none";
+  currentImageData = "";
+  mode = "file";
+});
+
+// 【写真を撮影する】ボタン：ファイル参照モードから撮影モードに切り替える
+takePhotoBtn.addEventListener('click', () => {
+  video.style.display = "block";
+  captureBtn.style.display = "inline-block";
+  fileInput.style.display = "none";
+  selectAgainBtn.style.display = "none";
+  takePhotoBtn.style.display = "none";
+  analyzeBtn.style.display = "none";
+  preview.src = "";
+  preview.style.display = "none";
+  currentImageData = "";
+  mode = "capture";
+});
+
 // 【再撮影する】ボタン：撮影モード用にカメラ状態に戻す
 reCaptureBtn.addEventListener('click', () => {
   // 完全に以前の撮影結果をクリア
@@ -211,7 +257,7 @@ reCaptureBtn.addEventListener('click', () => {
   reCaptureBtn.style.display = "none";
 });
 
-// 【もう一回診断する】ボタン：初期状態にリセットする
+// 【もう一回診断する】ボタン：すべての状態を初期にリセットする
 retryBtn.addEventListener('click', () => {
   resetToInitial();
 });
