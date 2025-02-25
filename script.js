@@ -10,23 +10,31 @@ let currentImageData = ''; // 選択中の画像データを保持
 // カメラ起動
 async function startCamera() {
     try {
-      // インカメラを強制
       const constraints = {
-        video: { facingMode: { exact: "user" } }
+        video: {
+          facingMode: { exact: "user" } // インカメラを強制
+        }
       };
   
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       video.srcObject = stream;
-      video.setAttribute("playsinline", true); // iOS対応
+  
+      // 📌 ここが重要（HTMLに書いてても、JS側でも設定しないと機能しない場合あり）
+      video.setAttribute("autoplay", true);
+      video.setAttribute("playsinline", true);
+      video.setAttribute("muted", true); // iOS/Safari対策
+  
       await video.play();
     } catch (err) {
       console.warn("インカメラ強制が失敗:", err);
   
-      // フォールバックとして通常の `facingMode: "user"` を試す
+      // フォールバック
       try {
         const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
         video.srcObject = fallbackStream;
+        video.setAttribute("autoplay", true);
         video.setAttribute("playsinline", true);
+        video.setAttribute("muted", true);
         await video.play();
       } catch (fallbackErr) {
         console.error("カメラ起動完全に失敗:", fallbackErr);
@@ -35,18 +43,9 @@ async function startCamera() {
     }
   }
   
-  // ページ読み込み時にカメラを起動
-  document.addEventListener("DOMContentLoaded", startCamera);
-    
-    // `exact: "user"` がエラーになった場合、通常の `facingMode: "user"` にフォールバック
-    navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: "user"
-      }
-    })
-    .then(stream => video.srcObject = stream)
-    .catch(err => console.error("カメラ起動完全に失敗:", err));
-  });
+  // 📌 `DOMContentLoaded` ではなく、明示的にボタン押下時に起動
+  document.getElementById("capture").addEventListener("click", startCamera);
+  
 
 // 撮影処理
 captureBtn.addEventListener('click', () => {
