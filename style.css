@@ -1,50 +1,36 @@
 body {
-    background-color: #f0f4f8;
-    font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
+    background-color: #f0f4f8;
+    font-family: sans-serif;
   }
   
   .container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 20px;
+    margin-top: 50px;
   }
   
-  video, canvas, img {
-    max-width: 100%;
-    border-radius: 8px;
-    margin-bottom: 10px;
+  video {
+    width: 300px;
+    height: 400px;
+    border-radius: 12px;
+    background-color: #ddd;
   }
   
-  /* ボタンのスタイル */
   button {
+    margin-top: 20px;
+    padding: 10px 30px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: none;
     background-color: #007bff;
     color: white;
-    border: none;
-    padding: 10px 20px;
-    margin: 5px;
-    border-radius: 5px;
-    font-size: 16px;
     cursor: pointer;
-    transition: background-color 0.3s;
   }
   
   button:hover {
     background-color: #0056b3;
-  }
-  
-  /* 各ボタンの配置（必要に応じて微調整） */
-  #startScan, #capture, #analyze, #retryBtn, #fileInput {
-    display: block;
-    width: 80%;
-    max-width: 300px;
-    margin: 10px auto;
-  }
-  
-  /* シェアボタン群を横並びに */
-  button:nth-of-type(n+1) {
-    /* 他のボタンとの区別が必要なら、個別にID指定でCSSを書くとよい */
   }
   
