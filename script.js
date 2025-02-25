@@ -12,28 +12,22 @@ async function startCamera() {
     try {
       const constraints = {
         video: {
-          facingMode: "user" // インカメラ指定
+          facingMode: { exact: "user" } // インカメラを強制
         }
       };
   
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       video.srcObject = stream;
   
-      // 📌 ここが重要（明示的に設定）
+      //  ここが重要（HTMLに書いてても、JS側でも設定しないと機能しない場合あり）
       video.setAttribute("autoplay", true);
       video.setAttribute("playsinline", true);
-      video.setAttribute("muted", true); // iOS対策
+      video.setAttribute("muted", true); // iOS/Safari対策
   
-      await video.play(); // 🔹 映像の再生を強制
+      await video.play();
     } catch (err) {
-      console.error("カメラ起動失敗:", err);
-      alert("カメラのアクセスが拒否されたか、利用できません！");
-    }
-  }
-  
-  // 📌 **ページ読み込み時にカメラを起動**
-  document.addEventListener("DOMContentLoaded", startCamera);
-  
+      console.warn("インカメラ強制が失敗:", err);
+      alert("カメラの起動に失敗しました: " + err.message); // ← 追加！
   
       // フォールバック
       try {
@@ -50,7 +44,7 @@ async function startCamera() {
     }
   }
   
-  // 📌 `DOMContentLoaded` ではなく、明示的にボタン押下時に起動
+  //  `DOMContentLoaded` ではなく、明示的にボタン押下時に起動
   document.getElementById("capture").addEventListener("click", startCamera);
   
 
