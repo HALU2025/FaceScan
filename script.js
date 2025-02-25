@@ -1,99 +1,65 @@
+const startScanBtn = document.getElementById('startScan');
 const video = document.getElementById('video');
 const captureBtn = document.getElementById('capture');
 const analyzeBtn = document.getElementById('analyze');
-const fileInput = document.getElementById('fileInput');
 const canvas = document.getElementById('canvas');
 const preview = document.getElementById('preview');
 
-let currentImageData = ''; // 選択中の画像データを保持
-let currentResult = ""; // 診断結果を保持
+let currentImageData = ''; // 画像データを保持
 
-// ✅ カメラ起動（Safari対応）
-async function startCamera() {
+// **診断を開始（カメラ起動）**
+startScanBtn.addEventListener('click', async () => {
     try {
-        const constraints = {
-            video: { facingMode: { exact: "user" } } // インカメラを強制
-        };
-
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
         video.srcObject = stream;
-
-        video.setAttribute("autoplay", true);
-        video.setAttribute("playsinline", true);
-        video.setAttribute("muted", true); // iOS/Safari対策
-
-        await video.play();
+        video.style.display = "block";
+        captureBtn.style.display = "block";
+        startScanBtn.style.display = "none"; // 診断開始ボタンを非表示に
     } catch (err) {
-        console.warn("インカメラ強制が失敗:", err);
-        alert("カメラの起動に失敗しました: " + err.message);
-
-        // フォールバック
-        try {
-            const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-            video.srcObject = fallbackStream;
-            video.setAttribute("autoplay", true);
-            video.setAttribute("playsinline", true);
-            video.setAttribute("muted", true);
-            await video.play();
-        } catch (fallbackErr) {
-            console.error("カメラ起動完全に失敗:", fallbackErr);
-            alert("カメラのアクセスを許可してください！");
-        }
+        alert("カメラのアクセスが許可されていません。設定を確認してください。");
+        console.error("カメラ起動エラー:", err);
     }
-}
+});
 
-// ✅ ページ読み込み時にカメラ起動
-window.addEventListener("load", startCamera);
-
-// ✅ 撮影処理
+// **撮影処理**
 captureBtn.addEventListener('click', () => {
     const ctx = canvas.getContext('2d');
-    const targetWidth = 300;
-    const aspectRatio = video.videoHeight / video.videoWidth;
-    const targetHeight = targetWidth * aspectRatio;
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
     currentImageData = canvas.toDataURL('image/jpeg', 0.7);
     preview.src = currentImageData;
+    preview.style.display = "block";
+
+    analyzeBtn.style.display = "block"; // 診断ボタンを表示
+    captureBtn.style.display = "none";  // 撮影ボタンを非表示
+    video.style.display = "none";       // カメラ映像を非表示
 });
 
-// ✅ ファイル選択処理
-fileInput.addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if(file){
-        const reader = new FileReader();
-        reader.onload = function(e){
-            currentImageData = e.target.result;
-            preview.src = currentImageData;
-        };
-        reader.readAsDataURL(file);
-    }
-});
-
-// ✅ 診断処理
+// **診断処理**
 analyzeBtn.addEventListener('click', () => {
-    if(!currentImageData) {
-        alert("画像を撮影または参照してください！");
+    if (!currentImageData) {
+        alert("画像を撮影してください！");
         return;
     }
 
-    fetch('https://facescan-api.onrender.com/api/upload', { // ✅ Render のAPI URLを指定
+    fetch('https://facescan-api.onrender.com/api/upload', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({image: currentImageData})
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: currentImageData })
     })
     .then(response => response.json())
     .then(result => {
         console.log('サーバーからのレスポンス:', result);
-        alert(result.result); // アラートで表示
-        currentResult = result.result; // 診断結果を保存
+        alert(result.result);
     })
     .catch(error => {
         console.error('エラー発生:', error);
+        alert("診断に失敗しました。");
     });
 });
+
 
 // ✅ 診断結果の画像化機能
 const shareBtn = document.createElement('button');
