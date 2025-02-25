@@ -79,12 +79,13 @@ resetToInitial();
 
 // 【診断を開始】ボタンが押されたらカメラ起動＆UI切り替え
 startScanBtn.addEventListener('click', async () => {
+    console.log("診断開始ボタンが押されました");
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
         video.srcObject = stream;
         video.style.display = "block";              // カメラ映像表示
         captureBtn.style.display = "inline-block";    // 撮影ボタン表示
-        fileInput.style.display = "inline-block";     // 画像参照ボタン表示
+        fileInput.style.display = "inline-block";     // 画像参照ボタン表示（必要なら）
         startScanBtn.style.display = "none";          // 診断開始ボタン非表示
         await video.play();
     } catch (err) {
