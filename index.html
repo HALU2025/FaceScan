@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FaceScan</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+      <video id="video" autoplay></video>
+      <canvas id="canvas" style="display:none;"></canvas>
+      
+      <button id="capture">撮影する</button>
+      <input type="file" id="fileInput" accept="image/*">
+      <img id="preview" style="width:300px; margin-top:20px; border-radius:8px;"/>
+  
+      <button id="analyze">診断する</button>
+    </div>
+  
+    <script src="script.js"></script>
+  </body>
+  
+</html>
