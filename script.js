@@ -263,39 +263,50 @@ retryBtn.addEventListener('click', () => {
 });
 
 
-
-// 【診断結果を画像で保存】ボタンの処理（シェア用画像生成＆ダウンロード）
-shareBtn.addEventListener('click', () => {
-    // シェア用に新たな canvas を作成（サイズや縦横比は必要に応じて調整）
-    const shareCanvas = document.createElement('canvas');
-    shareCanvas.width = 500;   // 例: 横500px
-    shareCanvas.height = 300;  // 例: 縦300px
-    const ctx = shareCanvas.getContext('2d');
-    
-    // 背景を塗りつぶす（白っぽい色）
-    ctx.fillStyle = "#f9f9f9";
-    ctx.fillRect(0, 0, shareCanvas.width, shareCanvas.height);
-    
-    // タイトルを描画（英語表記に変更）
-    ctx.fillStyle = "#333";
-    ctx.font = "20px Arial";
-    ctx.fillText("Face Scan Result", 20, 40);
-    
-    // currentResult に保持されている診断結果テキストを、改行ごとに描画
-    let y = 80;
-    currentResult.split('\n').forEach(line => {
-      ctx.fillText(line, 20, y);
-      y += 30;
+// モバイルかどうかを判定する関数
+function isMobile() {
+    return /Mobi|Android/i.test(navigator.userAgent);
+  }
+  
+  if (isMobile()) {
+    // モバイルの場合、shareBtnの代わりに案内メッセージを表示
+    const mobileMsg = document.createElement('p');
+    mobileMsg.textContent = "診断結果は長押しで保存できます。";
+    mobileMsg.style.fontSize = "16px";
+    mobileMsg.style.color = "#333";
+    mobileMsg.style.textAlign = "center";
+    document.body.appendChild(mobileMsg);
+  } else {
+    // PCの場合、shareBtnを使って診断結果画像をダウンロードする処理を設定
+    shareBtn.addEventListener('click', () => {
+      const shareCanvas = document.createElement('canvas');
+      shareCanvas.width = 500;   // 必要に応じてサイズを調整
+      shareCanvas.height = 300;
+      const ctx = shareCanvas.getContext('2d');
+      
+      // 背景描画
+      ctx.fillStyle = "#f9f9f9";
+      ctx.fillRect(0, 0, shareCanvas.width, shareCanvas.height);
+      
+      // タイトル描画（英語表記に変更）
+      ctx.fillStyle = "#333";
+      ctx.font = "20px Arial";
+      ctx.fillText("Face Scan Result", 20, 40);
+      
+      // currentResult のテキストを改行ごとに描画
+      let y = 80;
+      currentResult.split('\n').forEach(line => {
+        ctx.fillText(line, 20, y);
+        y += 30;
+      });
+      
+      // canvas を PNG 形式の画像に変換してダウンロードをトリガー
+      const dataUrl = shareCanvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = "face_scan_result.png";
+      a.click();
     });
-    
-    // Canvas の内容を PNG 画像のデータURLに変換
-    const dataUrl = shareCanvas.toDataURL('image/png');
-    
-    // ダウンロード用の <a> 要素を生成して自動クリック（ファイル名は英語表記）
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = "face_scan_result.png";
-    a.click();
-  });
+  }
   
 
