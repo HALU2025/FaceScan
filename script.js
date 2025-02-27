@@ -176,32 +176,41 @@ analyzeBtn.addEventListener('click', () => {
 });
 
 // ===================== 5. 診断結果の画像化・表示 =====================
+// 5. 診断結果の画像化・表示
 function displayResultImage(resultText) {
-  const resultCanvas = document.createElement('canvas');
-  const ctx = resultCanvas.getContext('2d');
-  resultCanvas.width = 500;
-  resultCanvas.height = 300;
-  
-  // 背景描画
-  ctx.fillStyle = "#f9f9f9";
-  ctx.fillRect(0, 0, resultCanvas.width, resultCanvas.height);
-  
-  // タイトル描画
-  ctx.fillStyle = "#333";
-  ctx.font = "20px Arial";
-  ctx.fillText("【診断結果】", 20, 40);
-  
-  // 診断結果テキストを改行ごとに描画
-  let y = 80;
-  resultText.split("\n").forEach(line => {
-    ctx.fillText(line, 20, y);
-    y += 30;
-  });
-  
-  const resultImageData = resultCanvas.toDataURL('image/png');
-  preview.src = resultImageData;
-  preview.style.display = "block";
-}
+    const resultCanvas = document.createElement('canvas');
+    const ctx = resultCanvas.getContext('2d');
+    
+    // 固定サイズのキャンバス（スマホ画面を考慮しつつ適切なサイズ）
+    const canvasWidth = 600; // 幅 600px
+    const canvasHeight = 900; // 縦横比 3:2 に合わせた高さ 900px
+    resultCanvas.width = canvasWidth;
+    resultCanvas.height = canvasHeight;
+    
+    // 背景画像の設定（任意の背景画像を描画）
+    const bgImage = new Image();
+    bgImage.src = 'background.png'; // 背景画像のパス
+    bgImage.onload = function() {
+      ctx.drawImage(bgImage, 0, 0, canvasWidth, canvasHeight);
+      
+      // 診断結果の描画（背景描画後にテキストを重ねる）
+      ctx.fillStyle = "#333";
+      ctx.font = "30px Arial";
+      ctx.fillText("【診断結果】", 40, 100);
+      
+      // 診断結果テキストを改行ごとに描画
+      let y = 180;
+      const lineHeight = 40;
+      resultText.split("\n").forEach(line => {
+        ctx.fillText(line, 40, y);
+        y += lineHeight;
+      });
+      
+      const resultImageData = resultCanvas.toDataURL('image/png');
+      preview.src = resultImageData;
+      preview.style.display = "block";
+    };
+  }
 
 // ===================== 6. 各種再操作ボタンの処理 =====================
 // 6-1. 再撮影するボタン（撮影モード用）
@@ -296,7 +305,7 @@ if (!isMobile()) {
   shareBtn.addEventListener('click', () => {
     const shareCanvas = document.createElement('canvas');
     shareCanvas.width = 500;
-    shareCanvas.height = 1000;
+    shareCanvas.height = 800;
     const ctx = shareCanvas.getContext('2d');
     
     ctx.fillStyle = "#f9f9f9";
