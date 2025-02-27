@@ -1,17 +1,17 @@
 // ===================== 1. 初期設定と DOM 要素の取得 =====================
-const startScanBtn = document.getElementById('startScan'); // 診断開始ボタン
-const video = document.getElementById('video');            // カメラ映像表示用
-const captureBtn = document.getElementById('capture');       // 撮影ボタン
+const startScanBtn = document.getElementById('startScan'); // 「診断を開始」ボタン
+const video = document.getElementById('video');            // カメラ映像用の video 要素
+const captureBtn = document.getElementById('capture');       // 「撮影」ボタン
 const analyzeBtn = document.getElementById('analyze');       // 「この写真で診断」ボタン
-const canvas = document.getElementById('canvas');            // 撮影結果用キャンバス
+const canvas = document.getElementById('canvas');            // 撮影結果用の canvas
 const preview = document.getElementById('preview');          // プレビュー画像
 
 // グローバル変数
 let currentImageData = "";   // 撮影または選択した画像データ
-let currentResult = "";      // AI診断結果のテキスト
-let mode = "";               // "capture"（撮影）または "file"（画像参照）を記録
+let currentResult = "";      // AI診断の結果テキスト
+let mode = "";               // "capture"（撮影）または "file"（画像参照）などの状態
 
-// 追加のUI要素（初期は非表示）
+// 動的に生成する追加UI要素（初期状態：非表示）
 const fileInput = document.createElement('input');
 fileInput.type = "file";
 fileInput.id = "fileInput";
@@ -85,10 +85,10 @@ startScanBtn.addEventListener('click', async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
     video.srcObject = stream;
-    video.style.display = "block";
-    captureBtn.style.display = "inline-block";
-    fileInput.style.display = "inline-block";
-    startScanBtn.style.display = "none";
+    video.style.display = "block";              // カメラ映像表示
+    captureBtn.style.display = "inline-block";    // 撮影ボタン表示
+    fileInput.style.display = "inline-block";     // 画像参照ボタン表示
+    startScanBtn.style.display = "none";          // 診断開始ボタン非表示
     await video.play();
   } catch (err) {
     alert("カメラのアクセスが許可されていません。設定を確認してください。");
@@ -96,17 +96,18 @@ startScanBtn.addEventListener('click', async () => {
   }
 });
 
-// 3-2. 撮影処理（カメラ映像から画像をキャプチャ）
+// 3-2. 撮影処理（カメラ映像から画像キャプチャ）
 captureBtn.addEventListener('click', () => {
   const ctx = canvas.getContext('2d');
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  
   currentImageData = canvas.toDataURL('image/jpeg', 0.7);
   preview.src = currentImageData;
   preview.style.display = "block";
   
-  mode = "capture";
+  mode = "capture"; // 撮影モード
   video.style.display = "none";
   captureBtn.style.display = "none";
   fileInput.style.display = "none";
@@ -124,7 +125,7 @@ fileInput.addEventListener('change', (event) => {
       preview.src = currentImageData;
       preview.style.display = "block";
       
-      mode = "file";
+      mode = "file"; // 画像参照モード
       video.style.display = "none";
       captureBtn.style.display = "none";
       fileInput.style.display = "none";
@@ -150,16 +151,19 @@ analyzeBtn.addEventListener('click', () => {
   .then(response => response.json())
   .then(result => {
     console.log('サーバーからのレスポンス:', result);
-    currentResult = result.result;
-    displayResultImage(currentResult);
-    analyzeBtn.style.display = "none";
-    shareBtn.style.display = "block";
-    twitterBtn.style.display = "inline-block";
-    lineBtn.style.display = "inline-block";
+    currentResult = result.result;  // 診断結果を保存
+    displayResultImage(currentResult); // 診断結果を画像化してプレビューに表示
+    analyzeBtn.style.display = "none";  // 「この写真で診断」ボタン非表示
+    
+    // 診断結果取得後、各シェア・再操作ボタンを表示（後述の updateShareUI() 呼び出しで処理）
     retryBtn.style.display = "block";
     reCaptureBtn.style.display = "none";
     selectAgainBtn.style.display = "none";
     takePhotoBtn.style.display = "none";
+    
+    // 状態を "result" に設定して、シェアUIを更新
+    mode = "result";
+    updateShareUI();
   })
   .catch(error => {
     console.error('エラー発生:', error);
@@ -196,7 +200,7 @@ function displayResultImage(resultText) {
 }
 
 // ===================== 6. 各種再操作ボタンの処理 =====================
-// 撮影モードの場合：再撮影ボタン
+// 6-1. 再撮影するボタン（撮影モード用）
 reCaptureBtn.addEventListener('click', () => {
   currentImageData = "";
   currentResult = "";
@@ -211,7 +215,7 @@ reCaptureBtn.addEventListener('click', () => {
   reCaptureBtn.style.display = "none";
 });
 
-// ファイル参照モードの場合：画像再選択ボタン
+// 6-2. 画像を選びなおすボタン（画像参照モード用）
 selectAgainBtn.addEventListener('click', () => {
   fileInput.style.display = "inline-block";
   selectAgainBtn.style.display = "none";
@@ -223,7 +227,7 @@ selectAgainBtn.addEventListener('click', () => {
   mode = "file";
 });
 
-// ファイル参照モードから撮影モードへの切り替え用：写真を撮影するボタン
+// 6-3. 写真を撮影するボタン（画像参照モードから撮影モードへの切り替え）
 takePhotoBtn.addEventListener('click', () => {
   video.style.display = "block";
   captureBtn.style.display = "inline-block";
@@ -237,24 +241,48 @@ takePhotoBtn.addEventListener('click', () => {
   mode = "capture";
 });
 
-// 「もう一回診断する」ボタン
+// 6-4. もう一回診断するボタン（全体リセット）
 retryBtn.addEventListener('click', () => {
   resetToInitial();
 });
 
 // ===================== 7. シェア/保存用処理（デバイス別対応） =====================
-if (isMobile()) {
-  // モバイルの場合、結果表示エリアに案内テキストを表示
+// updateShareUI(): 診断結果表示時（mode === 'result'）に、モバイルとPCで異なるシェア・保存UIを設定する
+function updateShareUI() {
   const container = document.querySelector('.container');
-  const mobileMsg = document.createElement('p');
-  mobileMsg.textContent = "画像を長押しで保存";
-  mobileMsg.style.fontSize = "16px";
-  mobileMsg.style.color = "#333";
-  mobileMsg.style.textAlign = "center";
-  mobileMsg.style.marginTop = "20px";
-  container.appendChild(mobileMsg);
-} else {
-  // PCの場合、shareBtn に診断結果画像の生成＆ダウンロード処理を設定
+  
+  if (mode === 'result') {
+    if (isMobile()) {
+      // ① モバイルの場合：診断結果画面に「画像を長押しで保存」という案内テキストを表示
+      // すでに表示されていないか確認
+      let mobileMsg = document.getElementById('mobileSaveMsg');
+      if (!mobileMsg) {
+        mobileMsg = document.createElement('p');
+        mobileMsg.id = 'mobileSaveMsg';
+        mobileMsg.textContent = "画像を長押しで保存";  // ①テキスト変更済み
+        mobileMsg.style.fontSize = "16px";
+        mobileMsg.style.color = "#333";
+        mobileMsg.style.textAlign = "center";
+        mobileMsg.style.marginTop = "20px";
+        container.appendChild(mobileMsg);
+      }
+      // モバイルでは PC用シェアボタンは非表示
+      shareBtn.style.display = "none";
+    } else {
+      // ② PCの場合：シェアボタンを表示して、クリック時に画像を生成・ダウンロード
+      // PC用シェアボタンが表示されていなければ表示する
+      shareBtn.style.display = "block";
+      // 既存のモバイル案内メッセージがあれば削除
+      const mobileMsg = document.getElementById('mobileSaveMsg');
+      if (mobileMsg) {
+        mobileMsg.remove();
+      }
+    }
+  }
+}
+
+// ===================== 8. シェア/保存ボタンのイベント（PC専用） =====================
+if (!isMobile()) {
   shareBtn.addEventListener('click', () => {
     const shareCanvas = document.createElement('canvas');
     shareCanvas.width = 500;
