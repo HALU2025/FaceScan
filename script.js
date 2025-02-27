@@ -296,7 +296,7 @@ if (!isMobile()) {
   shareBtn.addEventListener('click', () => {
     const shareCanvas = document.createElement('canvas');
     shareCanvas.width = 500;
-    shareCanvas.height = 300;
+    shareCanvas.height = 1000;
     const ctx = shareCanvas.getContext('2d');
     
     ctx.fillStyle = "#f9f9f9";
