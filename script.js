@@ -301,32 +301,38 @@ function updateShareUI() {
 
 // ===================== 8. シェア/保存ボタンのイベント（PC専用） =====================
 if (!isMobile()) {
-  // shareBtn: 診断結果画像を生成してダウンロードする処理
-  shareBtn.addEventListener('click', () => {
-    const shareCanvas = document.createElement('canvas');
-    shareCanvas.width = 500;
-    shareCanvas.height = 800;
-    const ctx = shareCanvas.getContext('2d');
-    
-    ctx.fillStyle = "#f9f9f9";
-    ctx.fillRect(0, 0, shareCanvas.width, shareCanvas.height);
-    
-    ctx.fillStyle = "#333";
-    ctx.font = "20px Arial";
-    ctx.fillText("Face Scan Result", 20, 40);
-    
-    let y = 80;
-    currentResult.split('\n').forEach(line => {
-      ctx.fillText(line, 20, y);
-      y += 30;
+    shareBtn.addEventListener('click', () => {
+      // ① シェア用キャンバスのサイズを600×900に設定
+      const shareCanvas = document.createElement('canvas');
+      shareCanvas.width = 600;
+      shareCanvas.height = 900;
+      const ctx = shareCanvas.getContext('2d');
+      
+      // ② 背景描画
+      ctx.fillStyle = "#f9f9f9";
+      ctx.fillRect(0, 0, shareCanvas.width, shareCanvas.height);
+      
+      // ③ タイトル描画（フォントサイズを大きく調整）
+      ctx.fillStyle = "#333";
+      ctx.font = "28px Arial";
+      ctx.fillText("Face Scan Result", 30, 50);
+      
+      // ④ 診断結果テキストの描画（余白と行間を調整）
+      let y = 100;
+      ctx.font = "24px Arial";
+      currentResult.split('\n').forEach(line => {
+        ctx.fillText(line, 30, y);
+        y += 40; // 行間を40pxに設定
+      });
+      
+      // ⑤ キャンバス内容をPNG画像に変換してダウンロードをトリガー
+      const dataUrl = shareCanvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = "face_scan_result.png";
+      a.click();
     });
-    
-    const dataUrl = shareCanvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = "face_scan_result.png";
-    a.click();
-  });
+  }
   
   // Twitter/Xでシェアボタンのイベント
   twitterBtn.addEventListener('click', () => {
