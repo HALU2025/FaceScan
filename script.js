@@ -8,10 +8,10 @@ const preview = document.getElementById('preview');          // プレビュー�
 
 // グローバル変数
 let currentImageData = "";   // 撮影または選択した画像データ
-let currentResult = "";      // AI診断の結果テキスト
-let mode = "";               // "capture"（撮影）または "file"（画像参照）などの状態
+let currentResult = "";      // AI診断結果のテキスト
+let mode = "";               // 状態: "capture"（撮影）または "file"（画像参照）など
 
-// 動的に生成する追加UI要素（初期状態：非表示）
+// 動的に生成する追加UI要素（初期は非表示）
 const fileInput = document.createElement('input');
 fileInput.type = "file";
 fileInput.id = "fileInput";
@@ -45,14 +45,19 @@ shareBtn.style.display = "none";
 document.body.appendChild(shareBtn);
 
 const twitterBtn = document.createElement('button');
-twitterBtn.textContent = "Twitterでシェア";
+twitterBtn.textContent = "Xでシェア";
 twitterBtn.style.display = "none";
 document.body.appendChild(twitterBtn);
 
-const lineBtn = document.createElement('button');
-lineBtn.textContent = "LINEでシェア";
-lineBtn.style.display = "none";
-document.body.appendChild(lineBtn);
+const fbBtn = document.createElement('button');
+fbBtn.textContent = "Facebookでシェア";
+fbBtn.style.display = "none";
+document.body.appendChild(fbBtn);
+
+const instaBtn = document.createElement('button');
+instaBtn.textContent = "Instagramでシェア";
+instaBtn.style.display = "none";
+document.body.appendChild(instaBtn);
 
 // ===================== 2. ユーティリティ関数と状態リセット =====================
 function resetToInitial() {
@@ -67,7 +72,8 @@ function resetToInitial() {
   retryBtn.style.display = "none";
   shareBtn.style.display = "none";
   twitterBtn.style.display = "none";
-  lineBtn.style.display = "none";
+  fbBtn.style.display = "none";
+  instaBtn.style.display = "none";
   preview.style.display = "none";
   currentImageData = "";
   currentResult = "";
@@ -154,16 +160,14 @@ analyzeBtn.addEventListener('click', () => {
     currentResult = result.result;  // 診断結果を保存
     displayResultImage(currentResult); // 診断結果を画像化してプレビューに表示
     analyzeBtn.style.display = "none";  // 「この写真で診断」ボタン非表示
-    
-    // 診断結果取得後、各シェア・再操作ボタンを表示（後述の updateShareUI() 呼び出しで処理）
+    // 結果取得後、再操作ボタン群を表示
     retryBtn.style.display = "block";
     reCaptureBtn.style.display = "none";
     selectAgainBtn.style.display = "none";
     takePhotoBtn.style.display = "none";
     
-    // 状態を "result" に設定して、シェアUIを更新
     mode = "result";
-    updateShareUI();
+    updateShareUI();  // シェア用UIの更新（モバイル/PCで分岐）
   })
   .catch(error => {
     console.error('エラー発生:', error);
@@ -246,43 +250,49 @@ retryBtn.addEventListener('click', () => {
   resetToInitial();
 });
 
-// ===================== 7. シェア/保存用処理（デバイス別対応） =====================
-// updateShareUI(): 診断結果表示時（mode === 'result'）に、モバイルとPCで異なるシェア・保存UIを設定する
+// ===================== 7. シェア/保存用UIの更新（モバイル/PC分岐） =====================
 function updateShareUI() {
   const container = document.querySelector('.container');
   
   if (mode === 'result') {
     if (isMobile()) {
       // ① モバイルの場合：診断結果画面に「画像を長押しで保存」という案内テキストを表示
-      // すでに表示されていないか確認
       let mobileMsg = document.getElementById('mobileSaveMsg');
       if (!mobileMsg) {
         mobileMsg = document.createElement('p');
         mobileMsg.id = 'mobileSaveMsg';
-        mobileMsg.textContent = "画像を長押しで保存";  // ①テキスト変更済み
+        // ① テキスト変更: "画像を長押しで保存" に変更
+        mobileMsg.textContent = "画像を長押しで保存";
         mobileMsg.style.fontSize = "16px";
         mobileMsg.style.color = "#333";
         mobileMsg.style.textAlign = "center";
         mobileMsg.style.marginTop = "20px";
         container.appendChild(mobileMsg);
       }
-      // モバイルでは PC用シェアボタンは非表示
+      // モバイルでは PC用のシェアボタン群を非表示
       shareBtn.style.display = "none";
+      twitterBtn.style.display = "none";
+      fbBtn.style.display = "none";
+      instaBtn.style.display = "none";
     } else {
-      // ② PCの場合：シェアボタンを表示して、クリック時に画像を生成・ダウンロード
-      // PC用シェアボタンが表示されていなければ表示する
-      shareBtn.style.display = "block";
-      // 既存のモバイル案内メッセージがあれば削除
+      // ② PCの場合：シェアボタン群を表示
+      // 既にモバイル用の案内テキストがあれば削除
       const mobileMsg = document.getElementById('mobileSaveMsg');
-      if (mobileMsg) {
-        mobileMsg.remove();
-      }
+      if (mobileMsg) mobileMsg.remove();
+      
+      // ダウンロード用ボタン（shareBtn）
+      shareBtn.style.display = "block";
+      // その他のシェアボタンを表示（Twitter/X, Facebook, Instagram）
+      twitterBtn.style.display = "inline-block";
+      fbBtn.style.display = "inline-block";
+      instaBtn.style.display = "inline-block";
     }
   }
 }
 
 // ===================== 8. シェア/保存ボタンのイベント（PC専用） =====================
 if (!isMobile()) {
+  // shareBtn: 診断結果画像を生成してダウンロードする処理
   shareBtn.addEventListener('click', () => {
     const shareCanvas = document.createElement('canvas');
     shareCanvas.width = 500;
@@ -307,5 +317,25 @@ if (!isMobile()) {
     a.href = dataUrl;
     a.download = "face_scan_result.png";
     a.click();
+  });
+  
+  // Twitter/Xでシェアボタンのイベント
+  twitterBtn.addEventListener('click', () => {
+    const text = encodeURIComponent("【診断結果】 Check out my FaceScan result!");
+    const url = encodeURIComponent(window.location.href);
+    const shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+    window.open(shareUrl, '_blank');
+  });
+  
+  // Facebookでシェアボタンのイベント
+  fbBtn.addEventListener('click', () => {
+    const url = encodeURIComponent(window.location.href);
+    const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+    window.open(shareUrl, '_blank');
+  });
+  
+  // Instagramでシェアボタンのイベント（Instagramは直接のシェア不可なので案内）
+  instaBtn.addEventListener('click', () => {
+    alert("Instagramへの直接シェアはできません。画像を保存してInstagramアプリから投稿してください。");
   });
 }
