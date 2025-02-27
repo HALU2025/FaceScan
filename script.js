@@ -332,7 +332,7 @@ if (!isMobile()) {
       a.download = "face_scan_result.png";
       a.click();
     });
-  }
+
   
   // Twitter/Xでシェアボタンのイベント
   twitterBtn.addEventListener('click', () => {
