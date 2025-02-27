@@ -348,5 +348,3 @@ if (!isMobile()) {
     alert("Instagramへの直接シェアはできません。画像を保存してInstagramアプリから投稿してください。");
   });
 }
-
-
