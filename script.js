@@ -189,7 +189,7 @@ function displayResultImage(resultText) {
     
     // 背景画像の設定（任意の背景画像を描画）
     const bgImage = new Image();
-    bgImage.src = 'background.png'; // 背景画像のパス
+    bgImage.src = 'images/background.png'; // 背景画像のパス
     bgImage.onload = function() {
       ctx.drawImage(bgImage, 0, 0, canvasWidth, canvasHeight);
       
