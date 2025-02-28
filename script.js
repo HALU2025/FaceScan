@@ -180,33 +180,65 @@ analyzeBtn.addEventListener('click', () => {
 
 // 5-1. AIから返されたプレーンテキストを、各行ごとに適切なタグでラッピングしてHTML文字列を生成する関数
 function transformResultToHTML(resultText) {
-    // 改行で分割し、余計な空行を除外
+    // ① 改行で分割し、各行をトリム、空行を除去
     const lines = resultText.split("\n").map(line => line.trim()).filter(line => line !== "");
-    let html = "<div class='result'>";
   
-    // 各行の先頭ラベルに応じて処理
-    lines.forEach(line => {
-      if (line.startsWith("キャッチフレーズ:")) {
-        html += "<div class='catchphrase'>" + line + "</div>";
-      } else if (line.startsWith("美人度/イケメン度:")) {
-        html += "<div class='main-score'>" + line + "</div>";
-      } else if (line.startsWith("推定年齢:")) {
-        html += "<div class='age'>" + line + "</div>";
-      } else if (line.startsWith("評価軸1:")) {
-        html += "<div class='axis1'>" + line + "</div>";
-      } else if (line.startsWith("評価軸2:")) {
-        html += "<div class='axis2'>" + line + "</div>";
-      } else if (line.startsWith("評価軸3:")) {
-        html += "<div class='axis3'>" + line + "</div>";
-      } else if (line.startsWith("似ている芸能人:")) {
-        html += "<div class='celeb-header'>" + line + "</div>";
-      } else if (line.startsWith("-")) {
-        html += "<div class='celeb'>" + line + "</div>";
-      } else if (line.startsWith("コメント:")) {
-        html += "<div class='comment'>" + line + "</div>";
+    // ② 完全にダッシュだけの行（区切り線）を除外（5つ以上のハイフンのみの行）
+    const filtered = lines.filter(line => !/^[-]{5,}$/.test(line));
+  
+    // ③ 各項目の行をラベルで検索
+    const catchphrase = filtered.find(line => line.startsWith("キャッチフレーズ:"));
+    const mainScore = filtered.find(line => line.startsWith("美人度/イケメン度:"));
+    const age = filtered.find(line => line.startsWith("推定年齢:"));
+    const axis1 = filtered.find(line => line.startsWith("評価軸1:"));
+    const axis2 = filtered.find(line => line.startsWith("評価軸2:"));
+    const axis3 = filtered.find(line => line.startsWith("評価軸3:"));
+  
+    // ④ 似ている芸能人：ヘッダー行と、その後の "-" で始まる行を取得
+    const celebHeader = filtered.find(line => line.startsWith("似ている芸能人:"));
+    let celebs = [];
+    if (celebHeader) {
+      const headerIndex = filtered.indexOf(celebHeader);
+      for (let i = headerIndex + 1; i < filtered.length; i++) {
+        if (filtered[i].startsWith("-")) {
+          celebs.push(filtered[i]);
+        } else {
+          break;
+        }
       }
-    });
-    
+    }
+  
+    const comment = filtered.find(line => line.startsWith("コメント:"));
+  
+    // ⑤ HTML文字列の生成
+    let html = "<div class='result'>";
+    if (catchphrase) {
+      html += "<div class='catchphrase'>" + catchphrase + "</div>";
+    }
+    if (mainScore) {
+      html += "<div class='main-score'>" + mainScore + "</div>";
+    }
+    if (age) {
+      html += "<div class='age'>" + age + "</div>";
+    }
+    if (axis1) {
+      html += "<div class='axis1'>" + axis1 + "</div>";
+    }
+    if (axis2) {
+      html += "<div class='axis2'>" + axis2 + "</div>";
+    }
+    if (axis3) {
+      html += "<div class='axis3'>" + axis3 + "</div>";
+    }
+    if (celebHeader) {
+      html += "<div class='celeb-header'>" + celebHeader + "</div>";
+      celebs.forEach(celeb => {
+        html += "<div class='celeb'>" + celeb + "</div>";
+      });
+    }
+    if (comment) {
+      html += "<div class='comment'>" + comment + "</div>";
+    }
     html += "</div>";
     return html;
   }
