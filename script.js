@@ -176,26 +176,90 @@ analyzeBtn.addEventListener('click', () => {
   });
 });
 
-// ===================== 5. 診断結果のHTML表示 =====================
-// AIから返されたHTML形式の診断結果を、結果表示用コンテナにレンダリング
-function displayResultHTML(resultHTML) {
-  // 結果表示用コンテナ（ID: resultContainer）を作成または更新
-  let resultContainer = document.getElementById('resultContainer');
-  if (!resultContainer) {
-    resultContainer = document.createElement('div');
-    resultContainer.id = 'resultContainer';
-    resultContainer.style.marginTop = "20px";
-    resultContainer.style.padding = "20px";
-    resultContainer.style.backgroundColor = "#fff";
-    resultContainer.style.border = "1px solid #ccc";
-    resultContainer.style.borderRadius = "8px";
-    const container = document.querySelector('.container');
-    container.appendChild(resultContainer);
+// ===================== 5. 診断結果のHTML表示（テキスト→HTML変換） =====================
+
+// 5-1. AIから返されたプレーンテキストを、各行ごとに適切なタグでラッピングしてHTML文字列を生成する関数
+function transformResultToHTML(resultText) {
+    // 改行で分割し、空行や区切り線（----------------------------）は除外
+    const lines = resultText.split("\n").filter(line => {
+      const trimmed = line.trim();
+      return trimmed !== "" && !trimmed.includes('----------------------------');
+    });
+    
+    let html = "<div class='result'>";
+    
+    // 5-2. キャッチフレーズ
+    if (lines.length >= 1 && lines[0].includes("キャッチフレーズ:")) {
+      html += "<div class='catchphrase'>" + lines[0] + "</div>";
+    }
+    
+    // 5-3. 美人度/イケメン度
+    if (lines.length >= 2 && lines[1].includes("美人度:")) {
+      html += "<div class='main-score'>" + lines[1] + "</div>";
+    }
+    
+    // 5-4. 推定年齢
+    if (lines.length >= 3 && lines[2].includes("推定年齢:")) {
+      html += "<div class='age'>" + lines[2] + "</div>";
+    }
+    
+    // 5-5. 評価軸（次の3行をそれぞれ score1, score2, score3 としてラッピング）
+    if (lines.length >= 6) {
+      html += "<div class='score1'>" + lines[3] + "</div>";
+      html += "<div class='score2'>" + lines[4] + "</div>";
+      html += "<div class='score3'>" + lines[5] + "</div>";
+    }
+    
+    // 5-6. 似ている芸能人（"似ている芸能人" が含まれる行と、その後の "-" で始まる各行）
+    const celebHeaderIndex = lines.findIndex(line => line.includes("似ている芸能人"));
+    if (celebHeaderIndex !== -1) {
+      html += "<div class='celeb-header'>" + lines[celebHeaderIndex] + "</div>";
+      // 複数行ある場合、次の行から "-" で始まる行を個別に追加
+      for (let i = celebHeaderIndex + 1; i < lines.length; i++) {
+        if (lines[i].trim().startsWith("-")) {
+          html += "<div class='celeb'>" + lines[i] + "</div>";
+        } else {
+          break;
+        }
+      }
+    }
+    
+    // 5-7. コメント（"コメント:" で始まる行）
+    const commentIndex = lines.findIndex(line => line.startsWith("コメント:"));
+    if (commentIndex !== -1) {
+      html += "<div class='comment'>" + lines[commentIndex] + "</div>";
+    }
+    
+    // 5-8. フッタ（"※" で始まる行）
+    const footnoteIndex = lines.findIndex(line => line.startsWith("※"));
+    if (footnoteIndex !== -1) {
+      html += "<div class='footnote'>" + lines[footnoteIndex] + "</div>";
+    }
+    
+    html += "</div>";
+    return html;
   }
-  resultContainer.innerHTML = resultHTML;
-  // 結果表示後、プレビュー画像は非表示にする（もしくは結果表示を代替する）
-  preview.style.display = "none";
-}
+  
+  // 5-9. 診断結果をHTML形式で表示する関数
+  function displayResultHTML(resultText) {
+    let resultContainer = document.getElementById('resultContainer');
+    if (!resultContainer) {
+      resultContainer = document.createElement('div');
+      resultContainer.id = 'resultContainer';
+      resultContainer.style.marginTop = "20px";
+      resultContainer.style.padding = "20px";
+      resultContainer.style.backgroundColor = "#fff";
+      resultContainer.style.border = "1px solid #ccc";
+      resultContainer.style.borderRadius = "8px";
+      const container = document.querySelector('.container');
+      container.appendChild(resultContainer);
+    }
+    // transformResultToHTML を呼び出して、HTML文字列を resultContainer にセット
+    resultContainer.innerHTML = transformResultToHTML(resultText);
+    // 結果表示後、プレビューは不要なら非表示
+    preview.style.display = "none";
+  }
+  
 
 // ===================== 6. 各種再操作ボタンの処理 =====================
 // 6-1. 再撮影するボタン（撮影モード用）
