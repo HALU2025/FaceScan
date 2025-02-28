@@ -283,53 +283,49 @@ function updateShareUI() {
   }
 }
 
-// ===================== 8. シェア/保存ボタンのイベント（PC専用） =====================
+// ===================== 8. シェア/保存ボタンのイベント（PC専用、HTML→画像変換） =====================
 if (!isMobile()) {
-  // shareBtn: 診断結果画像を生成してダウンロードする処理
-  shareBtn.addEventListener('click', () => {
-    const shareCanvas = document.createElement('canvas');
-    shareCanvas.width = 600;  // 600px
-    shareCanvas.height = 900; // 900px
-    const ctx = shareCanvas.getContext('2d');
-    
-    ctx.fillStyle = "#f9f9f9";
-    ctx.fillRect(0, 0, shareCanvas.width, shareCanvas.height);
-    
-    ctx.fillStyle = "#333";
-    ctx.font = "28px Arial";
-    ctx.fillText("Face Scan Result", 30, 50);
-    
-    let y = 100;
-    ctx.font = "24px Arial";
-    currentResult.split('\n').forEach(line => {
-      ctx.fillText(line, 30, y);
-      y += 40;
+    shareBtn.addEventListener('click', () => {
+      // ① 結果表示用のHTMLコンテナを取得（displayResultHTML()で生成していると仮定）
+      const resultContainer = document.getElementById('resultContainer');
+      if (!resultContainer) {
+        alert("診断結果表示エリアが見つかりません。");
+        return;
+      }
+      
+      // ② html2canvas を使って、結果表示コンテナをキャンバスに変換
+      html2canvas(resultContainer).then((canvas) => {
+        // ③ キャンバスをPNG画像に変換
+        const dataUrl = canvas.toDataURL('image/png');
+        
+        // ④ ダウンロードリンクを生成し自動クリックで画像をダウンロード
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = "face_scan_result.png";
+        a.click();
+      }).catch((err) => {
+        console.error("html2canvasエラー:", err);
+        alert("画像の生成に失敗しました。");
+      });
     });
     
-    const dataUrl = shareCanvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = "face_scan_result.png";
-    a.click();
-  });
-  
-  // Twitter/Xでシェアボタンのイベント
-  twitterBtn.addEventListener('click', () => {
-    const text = encodeURIComponent("【診断結果】 Check out my FaceScan result!");
-    const url = encodeURIComponent(window.location.href);
-    const shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
-    window.open(shareUrl, '_blank');
-  });
-  
-  // Facebookでシェアボタンのイベント
-  fbBtn.addEventListener('click', () => {
-    const url = encodeURIComponent(window.location.href);
-    const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
-    window.open(shareUrl, '_blank');
-  });
-  
-  // Instagramでシェアボタンのイベント（Instagramは直接のシェア不可なので案内）
-  instaBtn.addEventListener('click', () => {
-    alert("Instagramへの直接シェアはできません。画像を保存してInstagramアプリから投稿してください。");
-  });
-}
+    // Twitter/Xでシェアボタンのイベント
+    twitterBtn.addEventListener('click', () => {
+      const text = encodeURIComponent("【診断結果】 Check out my FaceScan result!");
+      const url = encodeURIComponent(window.location.href);
+      const shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+      window.open(shareUrl, '_blank');
+    });
+    
+    // Facebookでシェアボタンのイベント
+    fbBtn.addEventListener('click', () => {
+      const url = encodeURIComponent(window.location.href);
+      const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+      window.open(shareUrl, '_blank');
+    });
+    
+    // Instagramでシェアボタンのイベント（Instagramは直接のシェア不可なので案内）
+    instaBtn.addEventListener('click', () => {
+      alert("Instagramへの直接シェアはできません。画像を保存してInstagramアプリから投稿してください。");
+    });
+  }
