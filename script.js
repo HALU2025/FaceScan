@@ -180,69 +180,37 @@ analyzeBtn.addEventListener('click', () => {
 
 // 5-1. AIから返されたプレーンテキストを、各行ごとに適切なタグでラッピングしてHTML文字列を生成する関数
 function transformResultToHTML(resultText) {
-    // 改行で分割し、空行や区切り線（----------------------------）は除外
-    const lines = resultText.split("\n").filter(line => {
-      const trimmed = line.trim();
-      return trimmed !== "" && !trimmed.includes('----------------------------');
+    // 改行で分割し、余計な空行を除外
+    const lines = resultText.split("\n").map(line => line.trim()).filter(line => line !== "");
+    let html = "<div class='result'>";
+  
+    // 各行の先頭ラベルに応じて処理
+    lines.forEach(line => {
+      if (line.startsWith("キャッチフレーズ:")) {
+        html += "<div class='catchphrase'>" + line + "</div>";
+      } else if (line.startsWith("美人度/イケメン度:")) {
+        html += "<div class='main-score'>" + line + "</div>";
+      } else if (line.startsWith("推定年齢:")) {
+        html += "<div class='age'>" + line + "</div>";
+      } else if (line.startsWith("評価軸1:")) {
+        html += "<div class='axis1'>" + line + "</div>";
+      } else if (line.startsWith("評価軸2:")) {
+        html += "<div class='axis2'>" + line + "</div>";
+      } else if (line.startsWith("評価軸3:")) {
+        html += "<div class='axis3'>" + line + "</div>";
+      } else if (line.startsWith("似ている芸能人:")) {
+        html += "<div class='celeb-header'>" + line + "</div>";
+      } else if (line.startsWith("-")) {
+        html += "<div class='celeb'>" + line + "</div>";
+      } else if (line.startsWith("コメント:")) {
+        html += "<div class='comment'>" + line + "</div>";
+      }
     });
     
-    let html = "<div class='result'>";
-    
-    // 5-2. キャッチフレーズ
-    if (lines.length >= 1 && lines[0].includes("キャッチフレーズ:")) {
-      html += "<div class='catchphrase'>" + lines[0] + "</div>";
-    }
-    
-    // 5-3. 美人度/イケメン度
-    if (lines.length >= 2 && lines[1].includes("美人度:")) {
-      html += "<div class='main-score'>" + lines[1] + "</div>";
-    }
-    
-    // 5-4. 推定年齢
-    if (lines.length >= 3 && lines[2].includes("推定年齢:")) {
-      html += "<div class='age'>" + lines[2] + "</div>";
-    }
-    
-    // 5-5. 評価軸（次の3行をそれぞれ score1, score2, score3 としてラッピング）
-    if (lines.length >= 6) {
-      html += "<div class='score1'>" + lines[3] + "</div>";
-      html += "<div class='score2'>" + lines[4] + "</div>";
-      html += "<div class='score3'>" + lines[5] + "</div>";
-    }
-    
-    // 5-6. 似ている芸能人（"似ている芸能人" が含まれる行と、その後の "-" で始まる各行）
-    function transformResultToHTML(resultText) {
-        // 改行で分割し、余計な空行を除外
-        const lines = resultText.split("\n").map(line => line.trim()).filter(line => line !== "");
-        let html = "<div class='result'>";
-      
-        // 各行の先頭ラベルに応じて処理
-        lines.forEach(line => {
-          if (line.startsWith("キャッチフレーズ:")) {
-            html += "<div class='catchphrase'>" + line + "</div>";
-          } else if (line.startsWith("美人度/イケメン度:")) {
-            html += "<div class='main-score'>" + line + "</div>";
-          } else if (line.startsWith("推定年齢:")) {
-            html += "<div class='age'>" + line + "</div>";
-          } else if (line.startsWith("評価軸1:")) {
-            html += "<div class='axis1'>" + line + "</div>";
-          } else if (line.startsWith("評価軸2:")) {
-            html += "<div class='axis2'>" + line + "</div>";
-          } else if (line.startsWith("評価軸3:")) {
-            html += "<div class='axis3'>" + line + "</div>";
-          } else if (line.startsWith("似ている芸能人:")) {
-            html += "<div class='celeb-header'>" + line + "</div>";
-          } else if (line.startsWith("-")) {
-            html += "<div class='celeb'>" + line + "</div>";
-          } else if (line.startsWith("コメント:")) {
-            html += "<div class='comment'>" + line + "</div>";
-          }
-        });
-        
-        html += "</div>";
-        return html;
-      }
-      
+    html += "</div>";
+    return html;
+  }
+
   
   // 5-9. 診断結果をHTML形式で表示する関数
   function displayResultHTML(resultText) {
