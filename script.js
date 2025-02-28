@@ -8,10 +8,10 @@ const preview = document.getElementById('preview');          // プレビュー�
 
 // グローバル変数
 let currentImageData = "";   // 撮影または選択した画像データ
-let currentResult = "";      // AI診断結果のテキスト
+let currentResult = "";      // AI診断結果のテキスト（HTML形式の文字列）
 let mode = "";               // 状態: "capture"（撮影）または "file"（画像参照）など
 
-// 動的に生成する追加UI要素（初期は非表示）
+// 動的に生成する追加UI要素（初期状態は非表示）
 const fileInput = document.createElement('input');
 fileInput.type = "file";
 fileInput.id = "fileInput";
@@ -157,8 +157,9 @@ analyzeBtn.addEventListener('click', () => {
   .then(response => response.json())
   .then(result => {
     console.log('サーバーからのレスポンス:', result);
-    currentResult = result.result;  // 診断結果を保存
-    displayResultImage(currentResult); // 診断結果を画像化してプレビューに表示
+    currentResult = result.result;  // 診断結果（HTML形式の文字列）を保存
+    // 4-1. 診断結果をHTMLとして表示する
+    displayResultHTML(currentResult);
     analyzeBtn.style.display = "none";  // 「この写真で診断」ボタン非表示
     // 結果取得後、再操作ボタン群を表示
     retryBtn.style.display = "block";
@@ -175,42 +176,26 @@ analyzeBtn.addEventListener('click', () => {
   });
 });
 
-// ===================== 5. 診断結果の画像化・表示 =====================
-// 5. 診断結果の画像化・表示
-function displayResultImage(resultText) {
-    const resultCanvas = document.createElement('canvas');
-    const ctx = resultCanvas.getContext('2d');
-    
-    // 固定サイズのキャンバス（スマホ画面を考慮しつつ適切なサイズ）
-    const canvasWidth = 600; // 幅 600px
-    const canvasHeight = 900; // 縦横比 3:2 に合わせた高さ 900px
-    resultCanvas.width = canvasWidth;
-    resultCanvas.height = canvasHeight;
-    
-    // 背景画像の設定（任意の背景画像を描画）
-    const bgImage = new Image();
-    bgImage.src = 'images/background.png'; // 背景画像のパス
-    bgImage.onload = function() {
-      ctx.drawImage(bgImage, 0, 0, canvasWidth, canvasHeight);
-      
-      // 診断結果の描画（背景描画後にテキストを重ねる）
-      ctx.fillStyle = "#333";
-      ctx.font = "30px Arial";
-      ctx.fillText("【診断結果】", 40, 100);
-      
-      // 診断結果テキストを改行ごとに描画
-      let y = 180;
-      const lineHeight = 40;
-      resultText.split("\n").forEach(line => {
-        ctx.fillText(line, 40, y);
-        y += lineHeight;
-      });
-      
-      const resultImageData = resultCanvas.toDataURL('image/png');
-      preview.src = resultImageData;
-      preview.style.display = "block";
-    };
+// ===================== 5. 診断結果のHTML表示 =====================
+// AIから返されたHTML形式の診断結果を、結果表示用コンテナにレンダリング
+function displayResultHTML(resultHTML) {
+  // 結果表示用コンテナ（ID: resultContainer）を作成または更新
+  let resultContainer = document.getElementById('resultContainer');
+  if (!resultContainer) {
+    resultContainer = document.createElement('div');
+    resultContainer.id = 'resultContainer';
+    resultContainer.style.marginTop = "20px";
+    resultContainer.style.padding = "20px";
+    resultContainer.style.backgroundColor = "#fff";
+    resultContainer.style.border = "1px solid #ccc";
+    resultContainer.style.borderRadius = "8px";
+    const container = document.querySelector('.container');
+    container.appendChild(resultContainer);
   }
+  resultContainer.innerHTML = resultHTML;
+  // 結果表示後、プレビュー画像は非表示にする（もしくは結果表示を代替する）
+  preview.style.display = "none";
+}
 
 // ===================== 6. 各種再操作ボタンの処理 =====================
 // 6-1. 再撮影するボタン（撮影モード用）
@@ -270,7 +255,7 @@ function updateShareUI() {
       if (!mobileMsg) {
         mobileMsg = document.createElement('p');
         mobileMsg.id = 'mobileSaveMsg';
-        // ① テキスト変更: "画像を長押しで保存" に変更
+        // ① テキストを「画像を長押しで保存」に設定
         mobileMsg.textContent = "画像を長押しで保存";
         mobileMsg.style.fontSize = "16px";
         mobileMsg.style.color = "#333";
@@ -278,20 +263,19 @@ function updateShareUI() {
         mobileMsg.style.marginTop = "20px";
         container.appendChild(mobileMsg);
       }
-      // モバイルでは PC用のシェアボタン群を非表示
-      shareBtn.style.display = "none";
-      twitterBtn.style.display = "none";
-      fbBtn.style.display = "none";
-      instaBtn.style.display = "none";
+      // モバイルでは PC用のシェアボタン群を表示するか非表示にするか、今回は両方表示も可能です
+      // ここでは一旦非表示としています（必要に応じてコメントアウトしてください）
+      // shareBtn.style.display = "none";
+      // twitterBtn.style.display = "none";
+      // fbBtn.style.display = "none";
+      // instaBtn.style.display = "none";
     } else {
       // ② PCの場合：シェアボタン群を表示
       // 既にモバイル用の案内テキストがあれば削除
       const mobileMsg = document.getElementById('mobileSaveMsg');
       if (mobileMsg) mobileMsg.remove();
       
-      // ダウンロード用ボタン（shareBtn）
       shareBtn.style.display = "block";
-      // その他のシェアボタンを表示（Twitter/X, Facebook, Instagram）
       twitterBtn.style.display = "inline-block";
       fbBtn.style.display = "inline-block";
       instaBtn.style.display = "inline-block";
@@ -301,38 +285,33 @@ function updateShareUI() {
 
 // ===================== 8. シェア/保存ボタンのイベント（PC専用） =====================
 if (!isMobile()) {
-    shareBtn.addEventListener('click', () => {
-      // ① シェア用キャンバスのサイズを600×900に設定
-      const shareCanvas = document.createElement('canvas');
-      shareCanvas.width = 600;
-      shareCanvas.height = 900;
-      const ctx = shareCanvas.getContext('2d');
-      
-      // ② 背景描画
-      ctx.fillStyle = "#f9f9f9";
-      ctx.fillRect(0, 0, shareCanvas.width, shareCanvas.height);
-      
-      // ③ タイトル描画（フォントサイズを大きく調整）
-      ctx.fillStyle = "#333";
-      ctx.font = "28px Arial";
-      ctx.fillText("Face Scan Result", 30, 50);
-      
-      // ④ 診断結果テキストの描画（余白と行間を調整）
-      let y = 100;
-      ctx.font = "24px Arial";
-      currentResult.split('\n').forEach(line => {
-        ctx.fillText(line, 30, y);
-        y += 40; // 行間を40pxに設定
-      });
-      
-      // ⑤ キャンバス内容をPNG画像に変換してダウンロードをトリガー
-      const dataUrl = shareCanvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = "face_scan_result.png";
-      a.click();
+  // shareBtn: 診断結果画像を生成してダウンロードする処理
+  shareBtn.addEventListener('click', () => {
+    const shareCanvas = document.createElement('canvas');
+    shareCanvas.width = 600;  // 600px
+    shareCanvas.height = 900; // 900px
+    const ctx = shareCanvas.getContext('2d');
+    
+    ctx.fillStyle = "#f9f9f9";
+    ctx.fillRect(0, 0, shareCanvas.width, shareCanvas.height);
+    
+    ctx.fillStyle = "#333";
+    ctx.font = "28px Arial";
+    ctx.fillText("Face Scan Result", 30, 50);
+    
+    let y = 100;
+    ctx.font = "24px Arial";
+    currentResult.split('\n').forEach(line => {
+      ctx.fillText(line, 30, y);
+      y += 40;
     });
-
+    
+    const dataUrl = shareCanvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = "face_scan_result.png";
+    a.click();
+  });
   
   // Twitter/Xでシェアボタンのイベント
   twitterBtn.addEventListener('click', () => {
